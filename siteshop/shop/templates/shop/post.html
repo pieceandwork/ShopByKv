@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumbs">
+        <li><a href="{% url 'home' %}">Главная</a></li>
+        <li><a href="{% url 'category' post.cat.slug %}">{{ post.cat.name }}</a></li>
+        <li class="last">{{ post.title }}</li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+<h1>{{ post.title }}</h1>
+
+{% if not post.is_ac %}
+    <div class="warning">⚠️ Товар в архиве — покупатели его не видят.</div>
+{% endif %}
+
+{% if post.photo %}
+    <p><img class="img-article-left" src="{{ post.photo.url }}" alt="{{ post.title }}"></p>
+{% endif %}
+
+<p><strong>Категория:</strong> {{ post.cat.name }}</p>
+
+{% if post.tags.all %}
+    <p><strong>Модель:</strong>
+        {% for t in post.tags.all %}
+            <a href="{{ t.get_absolute_url }}">{{ t.name }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+{% endif %}
+
+<p class="product-price"><strong>Цена:</strong> {{ post.price }} ₽</p>
+
+<p class="product-stock">
+    <strong>В наличии:</strong>
+    {% if post.stock > 0 %}
+        {{ post.stock }} шт.
+    {% else %}
+        <span class="out-of-stock">Нет в наличии</span>
+    {% endif %}
+</p>
+
+{% if is_staff_user %}
+    <div class="staff-info">
+        <p><strong>Автор:</strong> {{ post.author.username|default:"—" }}</p>
+        <p><strong>Создан:</strong> {{ post.time_create|date:"d.m.Y H:i" }}</p>
+        <p><strong>Обновлён:</strong> {{ post.time_update|date:"d.m.Y H:i" }}</p>
+    </div>
+{% endif %}
+
+<div class="clear"></div>
+
+{{ post.content|linebreaks }}
+
+{% if can_edit %}
+    <p class="post-actions">
+        <a href="{% url 'post_edit' post.slug %}" class="btn">✏️ Редактировать</a>
+        <a href="{% url 'post_delete' post.slug %}" class="btn btn-danger">🗑 Удалить</a>
+        {% if post.is_ac %}
+            <a href="{% url 'post_archive' post.slug %}" class="btn btn-warning">📦 В архив</a>
+        {% else %}
+            <a href="{% url 'post_archive' post.slug %}" class="btn btn-success">📤 Из архива</a>
+        {% endif %}
+    </p>
+{% endif %}
+
+<p class="product-actions">
+    {% if post.stock > 0 %}
+        <a href="{% url 'cart_add' post.id %}" class="btn btn-success">🛒 Добавить в корзину</a>
+    {% else %}
+        <span class="btn btn-disabled">🛒 Нет в наличии</span>
+    {% endif %}
+    <a href="{% url 'home' %}" class="btn">← Назад к списку</a>
+</p>
+
+{% endblock %}

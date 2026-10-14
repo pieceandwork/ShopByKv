@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if object %}
+    <h1>Редактирование товара</h1>
+{% else %}
+    <h1>Добавление товара</h1>
+{% endif %}
+
+{% if object and not object.is_ac %}
+    <div class="warning">
+        ⚠️ Этот товар находится <strong>в архиве</strong> (черновик) и <strong>не виден</strong> покупателям.
+        Чтобы вернуть его в каталог — поставьте статус «Опубликовано».
+    </div>
+{% endif %}
+
+<form action="" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-error">{{ form.non_field_errors }}</div>
+    {% for f in form %}
+        <p><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}</p>
+        <div class="form-error">{{ f.errors }}</div>
+    {% endfor %}
+
+    <p class="form-actions">
+    {% if object %}
+        <button type="submit">Сохранить</button>
+        <a href="{% url 'post' object.slug %}" class="btn-cancel">Отмена</a>
+    {% else %}
+        <button type="submit">Создать</button>
+        <a href="{% url 'home' %}" class="btn-cancel">Отмена</a>
+    {% endif %}
+</p>
+</form>
+
+{% endblock %}

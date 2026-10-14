@@ -1,0 +1,19 @@
+{% for cat in cats_data %}
+    {% if cat.id == cat_selected %}
+        <li class="selected">{{ cat.name }}</li>
+    {% else %}
+        <li><a href="{% url 'category' cat.slug %}">{{ cat.name }}</a></li>
+    {% endif %}
+
+    {% if cat.id == cat_selected and cat.tags %}
+        <ul class="tags-sublist">
+            {% for t in cat.tags %}
+                {% if t.slug == tag_selected %}
+                    <li class="selected">{{ t.name }}</li>
+                {% else %}
+                    <li><a href="{% url 'tag' cat_slug=cat.slug tag_slug=t.slug %}">{{ t.name }}</a></li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endfor %}

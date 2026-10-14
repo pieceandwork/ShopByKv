@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Ваш профиль — {{ role }}</h1>
+
+<p>
+    <img src="{{ user.profile.avatar.url }}" alt="Аватар"
+         style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%;">
+</p>
+
+<p><strong>Логин:</strong> {{ user.username }}</p>
+<p><strong>Email:</strong> {{ user.email|default:"—" }}</p>
+<p><strong>Имя:</strong> {{ user.first_name|default:"—" }}</p>
+<p><strong>Фамилия:</strong> {{ user.last_name|default:"—" }}</p>
+<p><strong>Адрес доставки:</strong> {{ user.profile.address|default:"—" }}</p>
+<p><strong>О себе:</strong> {{ user.profile.content|default:"—" }}</p>
+
+<p><a href="{% url 'profile_edit' %}">Редактировать профиль</a></p>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block breadcrumbs %}
+    {% if cat_selected %}
+        <ul class="breadcrumbs">
+            <li><a href="{% url 'home' %}">Главная</a></li>
+
+            {% if tag_selected %}
+                <li><a href="{% url 'category' cat_slug %}">{{ cat_name }}</a></li>
+                <li class="last">{{ title }}</li>
+            {% else %}
+                <li class="last">{{ title }}</li>
+            {% endif %}
+        </ul>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<ul class="list-articles">
+    {% for p in page_obj %}
+        <li>
+            {% if not p.is_ac %}
+                <span class="archive-badge">📦 В архиве</span>
+            {% endif %}
+
+            {% if p.photo %}
+                <img class="img-article-left thumb" src="{{ p.photo.url }}" alt="{{ p.title }}">
+            {% endif %}
+
+            <h2>{{ p.title }}</h2>
+
+            <p class="product-info">
+                <strong>Цена:</strong> {{ p.price }} ₽ |
+                <strong>В наличии:</strong>
+                {% if p.stock > 0 %}
+                    {{ p.stock }} шт.
+                {% else %}
+                    <span class="out-of-stock">Нет в наличии</span>
+                {% endif %}
+            </p>
+
+            {% if is_staff_user %}
+                <div class="staff-info small">
+                    Автор: {{ p.author.username|default:"—" }} |
+                    Создан: {{ p.time_create|date:"d.m.Y H:i" }} |
+                    Обновлён: {{ p.time_update|date:"d.m.Y H:i" }}
+                </div>
+            {% endif %}
+
+            {% autoescape off %}
+                {{ p.content|linebreaks|truncatewords:40 }}
+            {% endautoescape %}
+
+            <div class="clear"></div>
+
+            <p class="link-read-post">
+                <a href="{% url 'post' p.slug %}">Подробнее</a>
+                {% if p.stock > 0 %}
+                    <a href="{% url 'cart_add' p.id %}" class="btn btn-success">🛒 В корзину</a>
+                {% else %}
+                    <span class="btn btn-disabled">🛒 Нет в наличии</span>
+                {% endif %}
+            </p>
+        </li>
+    {% empty %}
+        <li>Товаров пока нет.</li>
+    {% endfor %}
+</ul>
+
+{% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="page-arrow">←</a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <span class="page-num active">{{ num }}</span>
+            {% else %}
+                <a href="?page={{ num }}" class="page-num">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="page-arrow">→</a>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% endblock %}
