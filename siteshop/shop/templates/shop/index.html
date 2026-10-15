@@ -28,7 +28,13 @@
                 <img class="img-article-left thumb" src="{{ p.photo.url }}" alt="{{ p.title }}">
             {% endif %}
 
-            <h2>{{ p.title }}</h2>
+            <h2>
+                {% if p.highlighted_title %}
+                    {{ p.highlighted_title|safe }}
+                {% else %}
+                    {{ p.title }}
+                {% endif %}
+            </h2>
 
             <p class="product-info">
                 <strong>Цена:</strong> {{ p.price }} ₽ |

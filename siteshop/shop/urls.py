@@ -51,4 +51,5 @@ urlpatterns = [
     path('cart/decrease/<int:product_id>/', views.CartDecreaseView.as_view(), name='cart_decrease'),
     path('cart/remove/<int:product_id>/', views.CartRemoveView.as_view(), name='cart_remove'),
     path('checkout/', views.CheckoutView.as_view(), name='checkout'),
+    path('search/', views.SearchView.as_view(), name='search'),
 ]

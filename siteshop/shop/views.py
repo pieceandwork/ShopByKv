@@ -15,6 +15,9 @@ from django.core.mail import send_mail
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.views.decorators.vary import vary_on_cookie
+import re
+from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 
 @method_decorator(cache_page(60 * 5), name='dispatch')
@@ -503,6 +506,67 @@ ShopByKv"""
             'title': 'Заказ оформлен',
             'user': user,
         })
+
+class SearchView(ListView):
+    model = Shop
+    template_name = 'shop/index.html'
+    context_object_name = 'posts'
+    paginate_by = 5
+
+    def get_queryset(self):
+        query = self.request.GET.get('q', '').strip()
+
+        user = self.request.user
+        is_staff = (
+            user.is_authenticated
+            and (
+                user.groups.filter(name__in=['admin', 'moderator']).exists()
+                or user.is_superuser
+            )
+        )
+
+        if is_staff:
+            qs = Shop.objects.all()
+        else:
+            qs = Shop.published.all()
+
+        if query:
+            qs = qs.filter(title__icontains=query)
+
+        return qs.select_related('cat')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = self.request.GET.get('q', '').strip()
+        context['title'] = f'Поиск: {query}' if query else 'Поиск'
+        context['query'] = query
+
+        if query:
+            for post in context['posts']:
+                post.highlighted_title = self._highlight(post.title, query)
+
+        user = self.request.user
+        context['is_staff_user'] = (
+            user.is_authenticated
+            and (
+                user.groups.filter(name__in=['admin', 'moderator']).exists()
+                or user.is_superuser
+            )
+        )
+        return context
+
+    @staticmethod
+    def _highlight(text, query):
+        from django.utils.html import escape
+        from django.utils.safestring import mark_safe
+        import re
+        safe_text = escape(text)
+        safe_query = escape(query)
+        pattern = re.compile(re.escape(safe_query), re.IGNORECASE)
+        return mark_safe(pattern.sub(
+            lambda m: f'<mark>{m.group(0)}</mark>',
+            safe_text
+        ))
 
 def page_not_found(request, exception):
     return HttpResponseNotFound("<h1>Извините, но страница не была найдена! D:</h1>")

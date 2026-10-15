@@ -25,7 +25,14 @@
 {% block mainmenu %}
 		<div class="header">
 			<ul id="mainmenu" class="mainmenu">
-			<li class="logo"><a href="{% url 'home' %}"><div class="logo"></div></a></li>
+			    <li class="logo"><a href="{% url 'home' %}"><div class="logo"></div></a></li>
+                <li class="search-item">
+                    <form action="{% url 'search' %}" method="get" class="search-form">
+                        <input type="text" name="q" placeholder="Поиск..."
+                            value="{{ request.GET.q|default:'' }}" class="search-input">
+                        <button type="submit" class="search-btn">🔍</button>
+                    </form>
+                </li>
 {% for m in menu %}
 	{% if not forloop.last %}<li>{% else %}<li class="last">{% endif %}
 		<a href="{% url m.url_name %}">{{m.title}}</a></li>
