@@ -53,8 +53,8 @@ def get_price_range(qs):
 
     return min_price, max_price
 
-# @method_decorator(cache_page(60 * 5), name='dispatch')
-# @method_decorator(vary_on_cookie, name='dispatch')
+@method_decorator(cache_page(60 * 1), name='dispatch')
+@method_decorator(vary_on_cookie, name='dispatch')
 class ShopHome(ListView):
     model = Shop
     template_name = 'shop/index.html'
@@ -79,6 +79,8 @@ class ShopHome(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context['show_price_filter'] = True
 
         user = self.request.user
         is_staff = (
@@ -229,6 +231,7 @@ class ShopCategory(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['show_price_filter'] = True
         context['title'] = f'Комплектующее: {self.category.name}'
         context['cat_selected'] = self.category.pk
         context['cat_slug'] = self.category.slug
@@ -658,6 +661,30 @@ class SearchView(ListView):
             lambda m: f'<mark>{m.group(0)}</mark>',
             safe_text
         ))
+
+class CartSetView(View):
+    def post(self, request, product_id):
+        quantity = request.POST.get('quantity', '1')
+        try:
+            quantity = int(quantity)
+        except (ValueError, TypeError):
+            quantity = 1
+
+        product = get_object_or_404(Shop, id=product_id)
+        cart = request.session.get('cart', {})
+        pid = str(product_id)
+
+        if quantity <= 0:
+            cart.pop(pid, None)
+        else:
+            # ограничение по stock
+            if quantity > product.stock:
+                quantity = product.stock
+            cart[pid] = quantity
+
+        request.session['cart'] = cart
+        request.session.modified = True
+        return redirect('basket')
 
 def page_not_found(request, exception):
     return HttpResponseNotFound("<h1>Извините, но страница не была найдена! D:</h1>")

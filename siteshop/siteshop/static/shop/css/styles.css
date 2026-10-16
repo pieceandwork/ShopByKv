@@ -1157,3 +1157,33 @@ button[type="submit"]:active {
     font-size: 14px;
     margin-right: 5px;
 }
+
+.qty-form {
+    display: inline-block;
+    margin: 0 5px;
+}
+
+.qty-input {
+    width: 60px;
+    padding: 4px 8px;
+    background: #5c0011;
+    color: #FFD700;
+    border: 2px solid #FFD700;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    outline: none;
+    transition: transform 0.15s ease;
+}
+
+.qty-input:focus {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

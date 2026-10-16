@@ -17,7 +17,14 @@
 
             <span class="cart-qty">
                 <a href="{% url 'cart_decrease' item.product.id %}" class="qty-btn">−</a>
-                {{ item.quantity }}
+
+                <form method="post" action="{% url 'cart_set' item.product.id %}" class="qty-form">
+                    {% csrf_token %}
+                    <input type="number" name="quantity" value="{{ item.quantity }}"
+                           min="1" max="{{ item.product.stock }}" class="qty-input"
+                           onchange="this.form.submit()">
+                </form>
+
                 <a href="{% url 'cart_add' item.product.id %}" class="qty-btn">+</a>
             </span>
 
@@ -42,7 +49,7 @@
 
 {% else %}
     <p>Ваша корзина пуста.</p>
-    <p><a href="{% url 'home' %}">← Вернуться к покупкам</a></p>
+    <p><a href="{% url 'home' %}" class="btn">← Вернуться к покупкам</a></p>
 {% endif %}
 
 {% endblock %}

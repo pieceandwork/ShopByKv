@@ -125,31 +125,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         {% show_categories cat_selected tag_selected %}
     </ul>
+    {% if show_price_filter %}
+        <div class="price-filter">
+            <h3>Цена, ₽</h3>
 
-    <div class="price-filter">
-        <h3>Цена, ₽</h3>
+            <div class="price-values">
+                <span id="price-min-label">{{ selected_price_min }}</span>
+                <span>—</span>
+                <span id="price-max-label">{{ selected_price_max }}</span>
+            </div>
 
-        <div class="price-values">
-            <span id="price-min-label">{{ selected_price_min }}</span>
-            <span>—</span>
-            <span id="price-max-label">{{ selected_price_max }}</span>
+            <div class="range-slider">
+                <input type="range" id="price-min-range"
+                       min="{{ price_min }}" max="{{ price_max }}"
+                       value="{{ selected_price_min }}" step="1">
+                <input type="range" id="price-max-range"
+                       min="{{ price_min }}" max="{{ price_max }}"
+                       value="{{ selected_price_max }}" step="1">
+            </div>
+
+            <form method="get" id="price-filter-form" action="">
+                <input type="hidden" name="price_min" id="price-min-input" value="{{ selected_price_min }}">
+                <input type="hidden" name="price_max" id="price-max-input" value="{{ selected_price_max }}">
+                <a href="?" class="btn-cancel">Сбросить</a>
+            </form>
         </div>
-
-        <div class="range-slider">
-            <input type="range" id="price-min-range"
-                   min="{{ price_min }}" max="{{ price_max }}"
-                   value="{{ selected_price_min }}" step="1">
-            <input type="range" id="price-max-range"
-                   min="{{ price_min }}" max="{{ price_max }}"
-                   value="{{ selected_price_max }}" step="1">
-        </div>
-
-        <form method="get" id="price-filter-form" action="">
-            <input type="hidden" name="price_min" id="price-min-input" value="{{ selected_price_min }}">
-            <input type="hidden" name="price_max" id="price-max-input" value="{{ selected_price_max }}">
-            <a href="?" class="btn-cancel">Сбросить</a>
-        </form>
-    </div>
+    {% endif %}
 </td>
 
     <td valign="top" class="content">
