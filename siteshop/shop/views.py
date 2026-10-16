@@ -15,41 +15,92 @@ from django.core.mail import send_mail
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.views.decorators.vary import vary_on_cookie
-import re
-from django.utils.safestring import mark_safe
-from django.utils.html import escape
+from django.db.models import Min, Max
 
 
-@method_decorator(cache_page(60 * 5), name='dispatch')
-@method_decorator(vary_on_cookie, name='dispatch')
+def apply_filters(qs, request):
+    price_min = request.GET.get('price_min')
+    price_max = request.GET.get('price_max')
+
+    if price_min:
+        try:
+            qs = qs.filter(price__gte=float(price_min))
+        except (ValueError, TypeError):
+            pass
+
+    if price_max:
+        try:
+            qs = qs.filter(price__lte=float(price_max))
+        except (ValueError, TypeError):
+            pass
+
+    qs = qs.order_by('price')
+
+    return qs
+
+def get_price_range(qs):
+    in_stock = qs.filter(stock__gt=0)
+    agg = in_stock.aggregate(
+        min_price=Min('price'),
+        max_price=Max('price'),
+    )
+
+    min_price = int(agg['min_price']) if agg['min_price'] is not None else 0
+    max_price = int(agg['max_price']) if agg['max_price'] is not None else 100000
+
+    if min_price == max_price:
+        max_price = min_price + 1
+
+    return min_price, max_price
+
+# @method_decorator(cache_page(60 * 5), name='dispatch')
+# @method_decorator(vary_on_cookie, name='dispatch')
 class ShopHome(ListView):
     model = Shop
     template_name = 'shop/index.html'
     context_object_name = 'posts'
     paginate_by = 5
+    extra_context = {'title': 'ShopByKv'}
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated and (
-            user.groups.filter(name__in=['admin', 'moderator']).exists()
-            or user.is_superuser
-        ):
-            return Shop.objects.all().select_related('cat')
-        return Shop.published.all().select_related('cat')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'ShopByKv'
-        user = self.request.user
-        context['is_staff_user'] = (
+        is_staff = (
             user.is_authenticated
             and (
                 user.groups.filter(name__in=['admin', 'moderator']).exists()
                 or user.is_superuser
             )
         )
-        return context
 
+        qs = Shop.objects.all() if is_staff else Shop.published.all()
+        qs = qs.select_related('cat')
+        qs = apply_filters(qs, self.request)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        user = self.request.user
+        is_staff = (
+                user.is_authenticated
+                and (
+                        user.groups.filter(name__in=['admin', 'moderator']).exists()
+                        or user.is_superuser
+                )
+        )
+
+        base_qs = Shop.objects.all() if is_staff else Shop.published.all()
+
+        min_price, max_price = get_price_range(base_qs)
+
+        context['price_min'] = min_price
+        context['price_max'] = max_price
+
+        context['selected_price_min'] = self.request.GET.get('price_min', min_price)
+        context['selected_price_max'] = self.request.GET.get('price_max', max_price)
+
+        context['is_staff_user'] = is_staff
+        return context
 
 def about(request):
     return render(request, 'shop/about.html', {'title': 'О сайте', 'menu': menu})
@@ -159,12 +210,22 @@ class ShopCategory(ListView):
     def get_queryset(self):
         self.category = get_object_or_404(Category, slug=self.kwargs['cat_slug'])
         user = self.request.user
-        if user.is_authenticated and (
-            user.groups.filter(name__in=['admin', 'moderator']).exists()
-            or user.is_superuser
-        ):
-            return Shop.objects.filter(cat=self.category).select_related('cat')
-        return Shop.published.filter(cat=self.category).select_related('cat')
+        is_staff = (
+            user.is_authenticated
+            and (
+                user.groups.filter(name__in=['admin', 'moderator']).exists()
+                or user.is_superuser
+            )
+        )
+
+        if is_staff:
+            qs = Shop.objects.filter(cat=self.category)
+        else:
+            qs = Shop.published.filter(cat=self.category)
+
+        qs = qs.select_related('cat')
+        qs = apply_filters(qs, self.request)
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -172,14 +233,24 @@ class ShopCategory(ListView):
         context['cat_selected'] = self.category.pk
         context['cat_slug'] = self.category.slug
         context['cat_name'] = self.category.name
+
         user = self.request.user
-        context['is_staff_user'] = (
+        is_staff = (
             user.is_authenticated
             and (
                 user.groups.filter(name__in=['admin', 'moderator']).exists()
                 or user.is_superuser
             )
         )
+        base_qs = (
+            Shop.objects.filter(cat=self.category)
+            if is_staff
+            else Shop.published.filter(cat=self.category)
+        )
+        context['price_min'], context['price_max'] = get_price_range(base_qs)
+        context['selected_price_min'] = self.request.GET.get('price_min', context['price_min'])
+        context['selected_price_max'] = self.request.GET.get('price_max', context['price_max'])
+        context['is_staff_user'] = is_staff
         return context
 
 class ShopTag(ListView):
@@ -195,12 +266,22 @@ class ShopTag(ListView):
             cat__slug=self.kwargs['cat_slug'],
         )
         user = self.request.user
-        if user.is_authenticated and (
-            user.groups.filter(name__in=['admin', 'moderator']).exists()
-            or user.is_superuser
-        ):
-            return Shop.objects.filter(tags=self.tag).select_related('cat')
-        return Shop.published.filter(tags=self.tag).select_related('cat')
+        is_staff = (
+            user.is_authenticated
+            and (
+                user.groups.filter(name__in=['admin', 'moderator']).exists()
+                or user.is_superuser
+            )
+        )
+
+        if is_staff:
+            qs = Shop.objects.filter(tags=self.tag)
+        else:
+            qs = Shop.published.filter(tags=self.tag)
+
+        qs = qs.select_related('cat')
+        qs = apply_filters(qs, self.request)
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -209,14 +290,24 @@ class ShopTag(ListView):
         context['tag_selected'] = self.tag.slug
         context['cat_slug'] = self.tag.cat.slug
         context['cat_name'] = self.tag.cat.name
+
         user = self.request.user
-        context['is_staff_user'] = (
+        is_staff = (
             user.is_authenticated
             and (
                 user.groups.filter(name__in=['admin', 'moderator']).exists()
                 or user.is_superuser
             )
         )
+        base_qs = (
+            Shop.objects.filter(tags=self.tag)
+            if is_staff
+            else Shop.published.filter(tags=self.tag)
+        )
+        context['price_min'], context['price_max'] = get_price_range(base_qs)
+        context['selected_price_min'] = self.request.GET.get('price_min', context['price_min'])
+        context['selected_price_max'] = self.request.GET.get('price_max', context['price_max'])
+        context['is_staff_user'] = is_staff
         return context
 
 class RegisterUser(CreateView):

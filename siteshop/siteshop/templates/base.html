@@ -10,6 +10,53 @@
 	<link rel="shortcut icon" href="{% static 'shop/images/main.ico' %}" type="image/x-icon"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const minRange = document.getElementById('price-min-range');
+    const maxRange = document.getElementById('price-max-range');
+    const minLabel = document.getElementById('price-min-label');
+    const maxLabel = document.getElementById('price-max-label');
+    const minInput = document.getElementById('price-min-input');
+    const maxInput = document.getElementById('price-max-input');
+    const form = document.getElementById('price-filter-form');
+
+    if (!minRange || !maxRange) return;
+
+    function updateSliders() {
+        let minVal = parseInt(minRange.value, 10);
+        let maxVal = parseInt(maxRange.value, 10);
+
+        if (minVal > maxVal) {
+            [minVal, maxVal] = [maxVal, minVal];
+            minRange.value = minVal;
+            maxRange.value = maxVal;
+        }
+
+        if (minLabel) minLabel.textContent = minVal;
+        if (maxLabel) maxLabel.textContent = maxVal;
+        if (minInput) minInput.value = minVal;
+        if (maxInput) maxInput.value = maxVal;
+    }
+
+    minRange.addEventListener('input', updateSliders);
+    maxRange.addEventListener('input', updateSliders);
+
+    let timer;
+    function autoApply() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+            if (form) form.submit();
+        }, 700);
+    }
+
+    minRange.addEventListener('change', autoApply);
+    maxRange.addEventListener('change', autoApply);
+
+    updateSliders();
+});
+</script>
+
 <body>
 
 {% if messages %}
@@ -69,16 +116,41 @@
 <tr>
 
     <td valign="top" class="left-chapters">
-        <ul id="leftchapters">
-            {% if cat_selected == 0 or cat_selected is None %}
-                <li class="selected">Все комплектующие</li>
-            {% else %}
-                <li><a href="{% url 'home' %}">Все комплектующие</a></li>
-            {% endif %}
+    <ul id="leftchapters">
+        {% if cat_selected == 0 or cat_selected is None %}
+            <li class="selected">Все комплектующие</li>
+        {% else %}
+            <li><a href="{% url 'home' %}">Все комплектующие</a></li>
+        {% endif %}
 
-            {% show_categories cat_selected tag_selected %}
-        </ul>
-    </td>
+        {% show_categories cat_selected tag_selected %}
+    </ul>
+
+    <div class="price-filter">
+        <h3>Цена, ₽</h3>
+
+        <div class="price-values">
+            <span id="price-min-label">{{ selected_price_min }}</span>
+            <span>—</span>
+            <span id="price-max-label">{{ selected_price_max }}</span>
+        </div>
+
+        <div class="range-slider">
+            <input type="range" id="price-min-range"
+                   min="{{ price_min }}" max="{{ price_max }}"
+                   value="{{ selected_price_min }}" step="1">
+            <input type="range" id="price-max-range"
+                   min="{{ price_min }}" max="{{ price_max }}"
+                   value="{{ selected_price_max }}" step="1">
+        </div>
+
+        <form method="get" id="price-filter-form" action="">
+            <input type="hidden" name="price_min" id="price-min-input" value="{{ selected_price_min }}">
+            <input type="hidden" name="price_max" id="price-max-input" value="{{ selected_price_max }}">
+            <a href="?" class="btn-cancel">Сбросить</a>
+        </form>
+    </div>
+</td>
 
     <td valign="top" class="content">
 
