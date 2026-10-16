@@ -54,7 +54,7 @@
             {{ user.username }}
         </a> |
 
-        <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">Выйти</a>
+        <a href="#" onclick="document.getElementById('logout-form').submit(); return false;" class="btn-logout">Выйти</a>
     </li>
 {% else %}
     <li class="last"><a href="{% url 'login' %}">Войти</a></li>

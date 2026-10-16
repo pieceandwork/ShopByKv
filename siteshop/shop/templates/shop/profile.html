@@ -15,5 +15,5 @@
 <p><strong>Адрес доставки:</strong> {{ user.profile.address|default:"—" }}</p>
 <p><strong>О себе:</strong> {{ user.profile.content|default:"—" }}</p>
 
-<p><a href="{% url 'profile_edit' %}">Редактировать профиль</a></p>
+<p><a href="{% url 'profile_edit' %}" class="btn-link">Редактировать профиль</a></p>
 {% endblock %}
