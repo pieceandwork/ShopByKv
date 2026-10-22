@@ -150,18 +150,18 @@ MAILERS = {
         "OPTIONS": {
             "host": "smtp.gmail.com",
             "port": 587,
-            "username": "liambocomolfozuo@gmail.com",
-            "password": "grkbkqzjsicbsyid",
+            "username": "your_email@gmail.com",
+            "password": "XXXX XXXX XXXX XXXX",
             "use_tls": True,
         },
     },
 }
-DEFAULT_FROM_EMAIL = "liambocomolfozuo@gmail.com"
+DEFAULT_FROM_EMAIL = "your_email@gmail.com"
 
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1", # /1 - это номер базы данных Redis
+        "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
